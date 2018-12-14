@@ -5,7 +5,7 @@
 # If not running interactively, don't do anything
 case $- in
     *i*) ;;
-      *) return;;
+      *) ;;
 esac
 
 # don't put duplicate lines or lines starting with space in the history.
@@ -76,6 +76,10 @@ xterm*|rxvt*)
     ;;
 esac
 
+export PS1="\[\033[36m\]\u\[\033[m\]@\[\033[32m\]\h:\[\033[33;1m\]\w\[\033[m\]\$ "
+export CLICOLOR=1
+export LSCOLORS=ExFxBxDxCxegedabagacad
+
 # enable color support of ls and also add handy aliases
 if [ -x /usr/bin/dircolors ]; then
     test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
@@ -124,16 +128,18 @@ if [ -x /usr/bin/mint-fortune ]; then
      /usr/bin/mint-fortune
 fi
 
-alias gt='git status'
+alias gt='git status --ignore-submodules'
 alias gl='git log --graph --decorate --oneline --date=relative --all'
-alias vim='emacs -nw'
 alias chrome='google-chrome 2>/dev/null'
 alias clean-emacs='rm ./*~ 2>/dev/null'
+alias gp='git pull && git submodule update --recursive --init'
+alias gpup='git push --set-upstream origin `git branch | grep "*" | tr -d "*"`'
+alias gsu='git submodule update --recursive --init'
+
 export JAVA_HOME=/usr/lib/java/home
 export JAVA_PATH=/usr/lib/java/bin
-export GOPATH=/home/ngraves3/gocode
-export GOBIN=/home/ngraves3/gocode/bin
-export PATH=$PATH:$JAVA_PATH:/home/ngraves3/android-studio/bin
+#export GOPATH=/home/ngraves3/gocode
+#export GOBIN=/home/ngraves3/gocode/bin
 
 # Set todo completion
 
@@ -150,11 +156,12 @@ _todo_complete() {
 	    IFS=$OLD_IFS
 	    ;;
         done)
-	    ;&
+	    completions=`find ~/todo/list/*/* | cut -f6- -d/`
+	    ;;
 	remove)
 	    completions="$(find ~/todo/list/*/*)"
 	    local todo_loc=`readlink $(which todo) | xargs dirname`
-	    completions=${completions//"$todo_loc/list/"/""}
+	    completions=${completions/"$todo_loc/list/"/""}
 	    ;;
 	remove-category)
 	    completions=`ls ~/todo/list/`
@@ -177,7 +184,20 @@ function format_git_branch() {
     fi
 }
 
+function rename-branch() {
+    temp_name=temp/save-branch
+    branch_name=`git branch | grep "*" | tr -d "*" | tr -d " "`
+    git checkout -b $temp_name
+    git branch -d $branch_name
+    git checkout -b $1
+    git branch -d $temp_name
+}
 # Show git branch at bash prompt
-export PS1="\[\e]0;\u@\h \w\a\]${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\] \[\033[01;93m\]\$(format_git_branch)\[\033[01;34m\]\[\033[01;34m\]\w \$\[\033[00m\] "
+export PS1="\[\e]0;\u@\h \w\a\]${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\] \[\033[01;93m\]\$(format_git_branch)\[\033[01;34m\]\[\033[01;34m\]\w \n\[\033[01;32m\]↳\[\033[00m\]\[\033[01;34m\] \$\[\033[00m\] "
 
-setxkbmap -option caps:escape
+export PATH=/usr/local/bin:/usr/local/sbin:$PATH
+
+if which pyenv > /dev/null; then
+    eval "$(pyenv init -)"
+    eval "$(pyenv virtualenv-init -)"
+fi
